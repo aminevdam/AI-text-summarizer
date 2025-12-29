@@ -1,0 +1,58 @@
+{
+  "name": "Mindmap Prep",
+  "description": "Prepare inputs (text/current page/file) for mindmap backend analysis",
+  "version": "0.3.3",
+  "manifest_version": 3,
+  "icons": {
+    "16": "img/icon.png",
+    "19": "img/icon.png",
+    "38": "img/icon.png",
+    "48": "img/icon.png",
+    "128": "img/icon.png"
+  },
+  "action": {
+    "default_title": "Mindmap Prep",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "img/icon.png",
+      "19": "img/icon.png",
+      "38": "img/icon.png",
+      "48": "img/icon.png",
+      "128": "img/icon.png"
+    }
+  },
+  "permissions": ["activeTab", "scripting", "notifications", "storage"],
+  "host_permissions": ["<all_urls>", "file:///*"],
+  "web_accessible_resources": [
+    {
+      "resources": ["vendor/pdfjs/pdf.worker.min.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": [
+        "vendor/pdfjs/pdf.min.js",
+        "vendor/pdfjs/pdf.worker.min.js",
+        "vendor/MindElixir.js",
+        "content/dom-utils.js",
+        "content/utils.js",
+        "content/pdf-extractor.js",
+        "content/web-extractor.js",
+        "content/sidebar.js",
+        "content/mindmap-renderer.js",
+        "content/message-handler.js"
+      ],
+      "css": [
+        "styles.css",
+        "vendor/style.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
+

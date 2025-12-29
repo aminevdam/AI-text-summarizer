@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Mind Map Generator</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>Mind Map Generator</h1>
+    <p class="sub">Automatically generates a mind map for the current web page or PDF</p>
+  </header>
+
+  <main>
+    <section class="panel">
+      <div class="page-link-container" id="pageLinkContainer">
+        <div class="page-link">
+          <img id="pageFavicon" src="" alt="" class="page-favicon" />
+          <div class="page-info">
+            <div class="page-title" id="pageTitle">Loading...</div>
+            <div class="page-url" id="pageUrl">Loading...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ONE BUTTON -->
+    <div class="footer">
+      <button id="build" class="primary">Generate Mind Map</button>
+    </div>
+
+  </main>
+
+  <script src="popup.js"></script>
+</body>
+</html>
