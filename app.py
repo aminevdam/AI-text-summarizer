@@ -82,7 +82,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if request.url.path == "/health":
             return await call_next(request)
 
-        auth = request.headers.get("authorization", "")
+        auth = request.headers.get("Authorization", "")
         if not auth.startswith("Bearer "):
             raise HTTPException(status_code=401, detail="Missing bearer token")
 

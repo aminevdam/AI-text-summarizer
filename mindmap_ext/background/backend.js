@@ -1,6 +1,6 @@
 // Communication with backend
 
-const BACKEND_URL = "http://127.0.0.1:8000/mindmap_markdown";
+const BACKEND_URL = "https://api.mindmapai.tech/mindmap_markdown";
 const API_TOKEN = "pJ8xTTnkKQ64B9AB8dOcqQrtZdOhYFBRgpRWYYGqnxzTbui4Ipi6zZGOz_sG-SnC";
 
 

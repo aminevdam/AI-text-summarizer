@@ -22,7 +22,7 @@
     }
   },
   "permissions": ["activeTab", "scripting", "notifications", "storage", "alarms"],
-  "host_permissions": ["<all_urls>", "file:///*"],
+  "host_permissions": ["https://api.mindmapai.tech/*"],
   "web_accessible_resources": [
     {
       "resources": ["vendor/pdfjs/pdf.worker.min.js"],
