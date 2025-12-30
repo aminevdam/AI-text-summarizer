@@ -1,12 +1,16 @@
 // Communication with backend
 
 const BACKEND_URL = "http://127.0.0.1:8000/mindmap_markdown";
+const API_TOKEN = "pJ8xTTnkKQ64B9AB8dOcqQrtZdOhYFBRgpRWYYGqnxzTbui4Ipi6zZGOz_sG-SnC";
+
 
 async function postToBackend(payload) {
   console.log("[MM] Background: sending request to", BACKEND_URL);
   const res = await fetch(BACKEND_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json",
+              "Authorization": `Bearer ${API_TOKEN}`,
+              },
     body: JSON.stringify(payload)
   });
 

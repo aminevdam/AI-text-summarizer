@@ -5,7 +5,10 @@ import base64
 from typing import Dict, List
 
 from fastapi import FastAPI
+import secrets
+from fastapi import Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from dotenv import load_dotenv
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
@@ -50,17 +53,46 @@ load_dotenv()
 # FastAPI app
 # =========================
 
-app = FastAPI(title="Mindmap Backend")
+ENV = os.getenv("ENV", "dev")
 
-# MVP: allow all origins (later restrict to chrome-extension://<id>)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+app = FastAPI(
+    title="Mindmap Backend",
+    docs_url=None if ENV == "prod" else "/docs",
+    redoc_url=None if ENV == "prod" else "/redoc",
+    openapi_url=None if ENV == "prod" else "/openapi.json",
 )
 
+API_TOKEN = os.getenv("API_TOKEN", "")
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # healthcheck — без токена
+        if request.url.path == "/health":
+            return await call_next(request)
+
+        auth = request.headers.get("authorization", "")
+        if not auth.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Missing bearer token")
+
+        token = auth[7:].strip()
+        if not API_TOKEN or not secrets.compare_digest(token, API_TOKEN):
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        return await call_next(request)
+
+app.add_middleware(AuthMiddleware)
+
+EXT_ID = os.getenv("EXT_ID", "")
+if ENV=='prod':
+    allow_origins = [f"chrome-extension://{EXT_ID}"]
+else:
+    allow_origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins,
+    allow_methods=["*"],
+    allow_headers=["Authorization", "Content-Type"],
+)
 
 @app.get("/health")
 def health():

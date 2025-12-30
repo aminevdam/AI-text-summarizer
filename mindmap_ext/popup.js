@@ -31,7 +31,7 @@ async function loadPageInfo() {
     let url = tab.url || "";
     if (url.length > 50) {
       url = url.substring(0, 47) + "...";
-    }
+}
     urlEl.textContent = url;
     
   } catch (e) {
@@ -48,9 +48,9 @@ loadPageInfo();
 
 // ---------- BUILD (ONE BUTTON) ----------
 $("build").addEventListener("click", async () => {
-  try {
-    const tab = await getActiveTab();
-    
+    try {
+      const tab = await getActiveTab();
+
     // Create long-lived connection to keep service worker active
     // This connection will keep the service worker active even after popup closes
     const port = chrome.runtime.connect({ name: "mindmap_generation" });
