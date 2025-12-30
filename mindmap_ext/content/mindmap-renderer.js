@@ -297,15 +297,33 @@ function removeNodeFromMindElixir(mind, node) {
 
 function renderMindElixir(markdown) {
   console.log("[MM] renderMindElixir called, markdown length:", markdown?.length || 0);
+  console.log("[MM] Checking dependencies...");
+  console.log("[MM] window.Sidebar:", typeof window.Sidebar);
+  console.log("[MM] window.MindElixir:", typeof window.MindElixir);
+  console.log("[MM] window.ContentUtils:", typeof window.ContentUtils);
+  
+  if (!markdown || !markdown.trim()) {
+    console.error("[MM] Empty markdown provided!");
+    throw new Error("Empty markdown provided");
+  }
+  
   lastMindmapMarkdown = markdown || "";
 
+  if (!window.Sidebar) {
+    console.error("[MM] window.Sidebar not found!");
+    throw new Error("window.Sidebar not found");
+  }
+
   const panel = window.Sidebar.ensureMindmapSidebar();
+  console.log("[MM] Panel created/found:", !!panel);
+  
   const mount = panel.querySelector("#mm-elixir");
   if (!mount) {
     console.error("[MM] mm-elixir element not found!");
     throw new Error("mm-elixir element not found");
   }
   
+  console.log("[MM] Mount element found:", !!mount);
   mount.innerHTML = "";
   
   // Hide loader and show mind map
@@ -315,8 +333,11 @@ function renderMindElixir(markdown) {
   const MindElixir = window.MindElixir;
   if (!MindElixir) {
     console.error("[MM] MindElixir not found on window");
+    console.error("[MM] Available window properties:", Object.keys(window).filter(k => k.includes("Mind") || k.includes("Elixir")));
     throw new Error("MindElixir not found on window");
   }
+  
+  console.log("[MM] MindElixir found:", typeof MindElixir);
 
   console.log("[MM] Creating MindElixir instance");
   const mind = new MindElixir({
@@ -330,11 +351,26 @@ function renderMindElixir(markdown) {
   });
 
   console.log("[MM] Converting markdown to MindElixir data");
-  const data = markdownToMindElixir(markdown);
+  let data;
+  try {
+    data = markdownToMindElixir(markdown);
+    console.log("[MM] Markdown converted, root topic:", data?.nodeData?.topic);
+    console.log("[MM] Root children count:", data?.nodeData?.children?.length || 0);
+  } catch (e) {
+    console.error("[MM] Error converting markdown:", e);
+    throw e;
+  }
+  
   console.log("[MM] Initializing MindElixir with data");
-  mind.init(data);
-  mindInstance = mind;
-  console.log("[MM] MindElixir initialized successfully");
+  try {
+    mind.init(data);
+    mindInstance = mind;
+    console.log("[MM] MindElixir initialized successfully");
+  } catch (e) {
+    console.error("[MM] Error initializing MindElixir:", e);
+    console.error("[MM] Error stack:", e?.stack);
+    throw e;
+  }
   
   // Handle node selection (for links only)
   mind.bus.addListener("selectNode", (node) => {

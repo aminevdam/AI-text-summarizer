@@ -240,23 +240,83 @@ function ensureMindmapSidebar() {
         flex: 1;
         min-height: 0;
         background: white;
+        padding: 40px 20px;
       }
       
-      #mm-panel .mm-loader-spinner {
-        width: 50px;
-        height: 50px;
-        border: 4px solid var(--gray-200);
-        border-top: 4px solid var(--primary-500);
-        border-radius: 50%;
-        animation: mm-spin 1s linear infinite;
-        margin-bottom: 20px;
+      #mm-panel .mm-loader-content {
+        width: 100%;
+        max-width: 400px;
       }
       
       #mm-panel .mm-loader-text {
-        color: var(--gray-600);
-        font-size: 14px;
+        color: var(--gray-700);
+        font-size: 15px;
         font-weight: 500;
         font-family: var(--font-family);
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      
+      #mm-panel .mm-loader-stage {
+        color: var(--gray-500);
+        font-size: 13px;
+        font-weight: 400;
+        font-family: var(--font-family);
+        margin-bottom: 12px;
+        text-align: center;
+        min-height: 18px;
+      }
+      
+      #mm-panel .mm-progress-container {
+        width: 100%;
+        height: 8px;
+        background: var(--gray-200);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 8px;
+        position: relative;
+      }
+      
+      #mm-panel .mm-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary-500), var(--primary-400));
+        border-radius: 4px;
+        transition: width 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      #mm-panel .mm-progress-bar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.3),
+          transparent
+        );
+        animation: mm-progress-shine 2s infinite;
+      }
+      
+      @keyframes mm-progress-shine {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+      
+      #mm-panel .mm-progress-percent {
+        color: var(--gray-600);
+        font-size: 12px;
+        font-weight: 500;
+        font-family: var(--font-family);
+        text-align: center;
       }
       
       #mm-panel #mm-loader-error {
@@ -526,9 +586,15 @@ function ensureMindmapSidebar() {
       </div>
     </div>
     <div id="mm-loader">
-      <div class="mm-loader-spinner"></div>
-      <div class="mm-loader-text">Generating mind map...</div>
-      <div id="mm-loader-error"></div>
+      <div class="mm-loader-content">
+        <div class="mm-loader-text">Generating mind map...</div>
+        <div class="mm-loader-stage"></div>
+        <div class="mm-progress-container">
+          <div class="mm-progress-bar" id="mm-progress-bar" style="width: 0%"></div>
+        </div>
+        <div class="mm-progress-percent" id="mm-progress-percent">0%</div>
+        <div id="mm-loader-error"></div>
+      </div>
     </div>
     <div id="mm-elixir"></div>
   `;
@@ -974,17 +1040,45 @@ function showLoader() {
   const loader = panel.querySelector("#mm-loader");
   const elixir = panel.querySelector("#mm-elixir");
   const errorDiv = panel.querySelector("#mm-loader-error");
+  const progressBar = panel.querySelector("#mm-progress-bar");
+  const progressPercent = panel.querySelector("#mm-progress-percent");
+  const stageText = panel.querySelector(".mm-loader-stage");
   
   if (loader) {
     loader.style.display = "flex";
     errorDiv.style.display = "none";
     errorDiv.textContent = "";
+    // Reset progress
+    if (progressBar) progressBar.style.width = "0%";
+    if (progressPercent) progressPercent.textContent = "0%";
+    if (stageText) stageText.textContent = "";
   }
   if (elixir) {
     elixir.style.display = "none";
   }
   
   return panel;
+}
+
+function updateProgress(percent, stage) {
+  const panel = document.getElementById("mm-panel");
+  if (!panel) return;
+  
+  const progressBar = panel.querySelector("#mm-progress-bar");
+  const progressPercent = panel.querySelector("#mm-progress-percent");
+  const stageText = panel.querySelector(".mm-loader-stage");
+  
+  const clampedPercent = Math.max(0, Math.min(100, percent));
+  
+  if (progressBar) {
+    progressBar.style.width = `${clampedPercent}%`;
+  }
+  if (progressPercent) {
+    progressPercent.textContent = `${Math.round(clampedPercent)}%`;
+  }
+  if (stageText && stage) {
+    stageText.textContent = stage;
+  }
 }
 
 function hideLoader(error) {
@@ -1074,6 +1168,7 @@ window.Sidebar = {
   ensureMindmapSidebar,
   showLoader,
   hideLoader,
+  updateProgress,
   restoreSidebarIfNeeded
 };
 

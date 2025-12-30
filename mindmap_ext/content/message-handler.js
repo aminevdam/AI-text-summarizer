@@ -76,13 +76,30 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "MM_SHOW_MARKDOWN") {
     try {
       console.log("[MM] Received MM_SHOW_MARKDOWN, markdown length:", msg.markdown?.length || 0);
+      console.log("[MM] Checking if MindMapRenderer is available:", typeof window.MindMapRenderer);
+      
+      if (!window.MindMapRenderer) {
+        console.error("[MM] window.MindMapRenderer not found!");
+        console.error("[MM] Available window properties:", Object.keys(window).filter(k => k.includes("Mind") || k.includes("Renderer")));
+        throw new Error("window.MindMapRenderer not found. Content scripts may not be loaded.");
+      }
+      
+      if (!window.MindMapRenderer.renderMindElixir) {
+        console.error("[MM] window.MindMapRenderer.renderMindElixir not found!");
+        throw new Error("renderMindElixir method not found");
+      }
+      
+      console.log("[MM] Calling renderMindElixir...");
       window.MindMapRenderer.renderMindElixir(msg.markdown);
       window.Sidebar.hideLoader();
       console.log("[MM] Mind map rendered successfully");
       sendResponse({ ok: true });
     } catch (e) {
       console.error("[MM] Error rendering mind map:", e);
-      window.Sidebar.hideLoader();
+      console.error("[MM] Error stack:", e?.stack);
+      if (window.Sidebar) {
+        window.Sidebar.hideLoader();
+      }
       sendResponse({ ok: false, error: String(e?.message || e) });
     }
     return true;
@@ -101,6 +118,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg.type === "MM_HIDE_LOADER") {
     try {
       window.Sidebar.hideLoader(msg.error);
+      sendResponse({ ok: true });
+    } catch (e) {
+      sendResponse({ ok: false, error: String(e?.message || e) });
+    }
+    return true;
+  }
+
+  if (msg.type === "MM_UPDATE_PROGRESS") {
+    try {
+      window.Sidebar.updateProgress(msg.percent || 0, msg.stage || "");
       sendResponse({ ok: true });
     } catch (e) {
       sendResponse({ ok: false, error: String(e?.message || e) });

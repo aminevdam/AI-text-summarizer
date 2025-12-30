@@ -7,19 +7,27 @@ async function generateMindMap(tabId) {
   const taskId = `mindmap_${tabId}_${Date.now()}`;
   activeTasks.set(taskId, { tabId, startTime: Date.now() });
   
-  // Create long-lived connection to keep service worker active
-  let keepAlivePort = null;
+  // Use chrome.alarms to keep service worker active during long operations
+  // Also create a self-connecting port as backup
+  let keepAliveAlarm = null;
+  let keepAliveInterval = null;
+  
   try {
-    keepAlivePort = chrome.runtime.connect({ name: `keepalive_${taskId}` });
-    keepAlivePort.onDisconnect.addListener(() => {
-      console.log("[MM] Background: Keep-alive port disconnected");
-    });
+    // Create alarm that fires every 20 seconds to keep service worker alive
+    const alarmName = `keepalive_${taskId}`;
+    chrome.alarms.create(alarmName, { periodInMinutes: 0.33 }); // ~20 seconds
+    keepAliveAlarm = alarmName;
+    
+    // Also use setInterval as additional keep-alive mechanism
+    keepAliveInterval = setInterval(() => {
+      // Keep service worker active
+    }, 15000); // Every 15 seconds
+    
   } catch (e) {
-    console.warn("[MM] Background: Failed to create keep-alive port:", e);
+    // Ignore keep-alive errors
   }
   
   try {
-    console.log("[MM] Background: Starting mind map generation for tab", tabId, "task:", taskId);
     
     // Save task to storage for recovery on restart
     await chrome.storage.local.set({
@@ -33,6 +41,13 @@ async function generateMindMap(tabId) {
     // Open sidebar with loader
     await (self || globalThis).BackgroundCommunication.sendToContent(tabId, {
       type: "MM_SHOW_LOADER"
+    });
+    
+    // Update progress: Starting
+    await (self || globalThis).BackgroundCommunication.sendToContent(tabId, {
+      type: "MM_UPDATE_PROGRESS",
+      percent: 5,
+      stage: "Initializing..."
     });
 
     // Save sidebar state to storage
@@ -48,14 +63,15 @@ async function generateMindMap(tabId) {
       }
     });
 
-    // Try as PDF
-    console.log("[MM] Background: Requesting PDF text from content script, tabId:", tabId);
-    const pdfResp = await (self || globalThis).BackgroundCommunication.sendToContent(tabId, { type: "MM_GET_PDF_TEXT", maxPages: 30 });
-    console.log("[MM] Background: PDF response received:", {
-      ok: pdfResp?.ok,
-      error: pdfResp?.error,
-      blocksCount: pdfResp?.data?.blocks?.length || 0
+    // Update progress: Extracting content
+    await (self || globalThis).BackgroundCommunication.sendToContent(tabId, {
+      type: "MM_UPDATE_PROGRESS",
+      percent: 10,
+      stage: "Extracting content from page..."
     });
+    
+    // Try as PDF
+    const pdfResp = await (self || globalThis).BackgroundCommunication.sendToContent(tabId, { type: "MM_GET_PDF_TEXT", maxPages: 30 });
     if (pdfResp?.ok) {
       if (pdfResp.data.blocks && pdfResp.data.blocks.length > 0) {
         const blocks = pdfResp.data.blocks;
@@ -84,17 +100,16 @@ async function generateMindMap(tabId) {
       }
     } else if (pdfResp?.error === "not_pdf_tab") {
       // Not a PDF, continue as regular page
-    } else {
-      // PDF extraction error, but might not be a PDF
-      console.warn("PDF extraction failed:", pdfResp?.error);
     }
 
     // Otherwise — regular HTML page
-    console.log("[MM] Background: Requesting page blocks from content script, tabId:", tabId);
     const resp = await (self || globalThis).BackgroundCommunication.sendToContent(tabId, { type: "MM_GET_PAGE_BLOCKS" });
-    console.log("[MM] Background: Page blocks response received:", {
-      ok: resp?.ok,
-      blocksCount: resp?.data?.blocks?.length || 0
+    
+    // Update progress: Content extracted
+    await (self || globalThis).BackgroundCommunication.sendToContent(tabId, {
+      type: "MM_UPDATE_PROGRESS",
+      percent: 20,
+      stage: "Content extracted, preparing data..."
     });
     if (!resp?.ok) {
       await (self || globalThis).BackgroundCommunication.sendToContent(tabId, {
@@ -136,14 +151,14 @@ async function generateMindMap(tabId) {
 
     await processAndShowMindMap(payload, tabId, taskId);
   } catch (e) {
-    console.error("[MM] Background: Error generating mind map:", e);
+    console.error("[MM] Error generating mind map:", e.message);
     try {
       await (self || globalThis).BackgroundCommunication.sendToContent(tabId, {
         type: "MM_HIDE_LOADER",
         error: `Error: ${e.message}`
       });
     } catch (sendErr) {
-      console.error("[MM] Background: Failed to send error message:", sendErr);
+      // Ignore send errors
     }
     chrome.notifications.create({
       type: "basic",
@@ -152,11 +167,16 @@ async function generateMindMap(tabId) {
       message: `Error: ${e.message}`
     });
   } finally {
-    if (keepAlivePort) {
+    // Clean up keep-alive mechanisms
+    if (keepAliveInterval) {
+      clearInterval(keepAliveInterval);
+      keepAliveInterval = null;
+    }
+    if (keepAliveAlarm) {
       try {
-        keepAlivePort.disconnect();
+        chrome.alarms.clear(keepAliveAlarm);
       } catch (e) {
-        // Ignore errors on disconnect
+        // Ignore
       }
     }
     activeTasks.delete(taskId);
@@ -177,20 +197,66 @@ async function processAndShowMindMap(payload, tabId, taskId) {
       });
     }
     
-    console.log("[MM] Background: Sending payload to backend, tabId:", tabId);
-    console.log("[MM] Background: Payload blocks count:", payload.blocks?.length || 0);
-    const resp = await (self || globalThis).BackendAPI.postToBackend(payload);
-    console.log("[MM] Background: Backend response:", {
-      ok: resp.ok,
-      hasMarkdown: !!resp.markdown,
-      markdownLength: resp.markdown?.length || 0,
-      error: resp.error,
-      message: resp.message
+    // Update progress: Sending to backend
+    await (self || globalThis).BackgroundCommunication.sendToContent(tabId, {
+      type: "MM_UPDATE_PROGRESS",
+      percent: 25,
+      stage: "Sending data to backend..."
     });
+    
+    let resp;
+    let progressInterval = null;
+    try {
+      // Simulate progress during backend processing
+      progressInterval = setInterval(async () => {
+        const currentProgress = await chrome.storage.local.get("mm_current_progress");
+        const progress = currentProgress.mm_current_progress || 25;
+        if (progress < 90) {
+          const newProgress = Math.min(90, progress + 2);
+          await chrome.storage.local.set({ mm_current_progress: newProgress });
+          await (self || globalThis).BackgroundCommunication.sendToContent(tabId, {
+            type: "MM_UPDATE_PROGRESS",
+            percent: newProgress,
+            stage: "Processing with AI... (this may take a few minutes)"
+          });
+        }
+      }, 3000); // Update every 3 seconds
+      
+      resp = await (self || globalThis).BackendAPI.postToBackend(payload);
+      
+      clearInterval(progressInterval);
+      await chrome.storage.local.remove("mm_current_progress");
+    } catch (error) {
+      console.error("[MM] Backend error:", error.message);
+      
+      // Clear progress interval if it exists
+      if (progressInterval) {
+        clearInterval(progressInterval);
+      }
+      await chrome.storage.local.remove("mm_current_progress");
+      
+      await (self || globalThis).BackgroundCommunication.sendToContent(tabId, {
+        type: "MM_HIDE_LOADER",
+        error: `Backend error: ${error?.message || "Unknown error"}`
+      });
+      chrome.notifications.create({
+        type: "basic",
+        iconUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        title: "Error",
+        message: `Failed to connect to backend: ${error?.message || "Unknown error"}`
+      });
+      return;
+    }
 
     // Show mindmap on page if markdown received
     if (resp.ok && resp.markdown) {
-      console.log("[MM] Background: Got markdown, length:", resp.markdown.length);
+      // Update progress: Processing complete
+      await (self || globalThis).BackgroundCommunication.sendToContent(tabId, {
+        type: "MM_UPDATE_PROGRESS",
+        percent: 95,
+        stage: "Rendering mind map..."
+      });
+      
       try {
         // Check that tab still exists
         let currentTabId = tabId;
@@ -198,7 +264,6 @@ async function processAndShowMindMap(payload, tabId, taskId) {
           const tab = await chrome.tabs.get(tabId);
           currentTabId = tab.id;
         } catch (e) {
-          console.warn("[MM] Background: Tab not found, trying to find active tab");
           const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
           if (tabs[0]) {
             currentTabId = tabs[0].id;
@@ -216,12 +281,17 @@ async function processAndShowMindMap(payload, tabId, taskId) {
           });
         }
         
-        console.log("[MM] Background: Sending markdown to content script, tabId:", currentTabId);
-        const contentResp = await (self || globalThis).BackgroundCommunication.sendToContent(currentTabId, {
+        // Update progress: Finalizing
+        await (self || globalThis).BackgroundCommunication.sendToContent(currentTabId, {
+          type: "MM_UPDATE_PROGRESS",
+          percent: 100,
+          stage: "Complete!"
+        });
+        
+        await (self || globalThis).BackgroundCommunication.sendToContent(currentTabId, {
           type: "MM_SHOW_MARKDOWN",
           markdown: resp.markdown
         });
-        console.log("[MM] Background: Content script response:", contentResp);
         
         // Task completed
         if (taskId) {
@@ -242,7 +312,7 @@ async function processAndShowMindMap(payload, tabId, taskId) {
           message: "Mind map successfully created and displayed in the sidebar"
         });
       } catch (e) {
-        console.error("[MM] Background: Cannot show markdown on page:", e);
+        console.error("[MM] Cannot show markdown:", e.message);
         await (self || globalThis).BackgroundCommunication.sendToContent(tabId, {
           type: "MM_HIDE_LOADER",
           error: "Failed to display mind map: " + e.message
@@ -255,9 +325,8 @@ async function processAndShowMindMap(payload, tabId, taskId) {
         });
       }
     } else {
-      console.error("[MM] Background: Backend response error:", resp);
       const errorMsg = resp.error || resp.message || "Failed to create mind map";
-      console.log("[MM] Background: Hiding loader with error:", errorMsg);
+      console.error("[MM] Backend error:", errorMsg);
       await (self || globalThis).BackgroundCommunication.sendToContent(tabId, {
         type: "MM_HIDE_LOADER",
         error: errorMsg
@@ -270,7 +339,7 @@ async function processAndShowMindMap(payload, tabId, taskId) {
       });
     }
   } catch (e) {
-    console.error("[MM] Background: Error in processAndShowMindMap:", e);
+    console.error("[MM] Error in processAndShowMindMap:", e.message);
     await (self || globalThis).BackgroundCommunication.sendToContent(tabId, {
       type: "MM_HIDE_LOADER",
       error: "Error sending request: " + e.message
