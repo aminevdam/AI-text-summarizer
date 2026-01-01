@@ -92,7 +92,7 @@ async function generateMindMap(tabId) {
         });
         chrome.notifications.create({
           type: "basic",
-          iconUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+          iconUrl: chrome.runtime.getURL('img/icon.png'),
           title: "Error",
           message: "No text blocks found in PDF."
         });
@@ -118,7 +118,7 @@ async function generateMindMap(tabId) {
       });
       chrome.notifications.create({
         type: "basic",
-        iconUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        iconUrl: chrome.runtime.getURL('img/icon.png'),
         title: "Error",
         message: "Failed to get data from page."
       });
@@ -134,7 +134,7 @@ async function generateMindMap(tabId) {
       });
       chrome.notifications.create({
         type: "basic",
-        iconUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        iconUrl: chrome.runtime.getURL('img/icon.png'),
         title: "Error",
         message: "No text blocks found on page."
       });
@@ -162,7 +162,7 @@ async function generateMindMap(tabId) {
     }
     chrome.notifications.create({
       type: "basic",
-      iconUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      iconUrl: chrome.runtime.getURL('img/icon.png'),
       title: "Error",
       message: `Error: ${e.message}`
     });
@@ -241,7 +241,7 @@ async function processAndShowMindMap(payload, tabId, taskId) {
       });
       chrome.notifications.create({
         type: "basic",
-        iconUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        iconUrl: chrome.runtime.getURL('img/icon.png'),
         title: "Error",
         message: `Failed to connect to backend: ${error?.message || "Unknown error"}`
       });
@@ -307,7 +307,7 @@ async function processAndShowMindMap(payload, tabId, taskId) {
         // Show success notification
         chrome.notifications.create({
           type: "basic",
-          iconUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+          iconUrl: chrome.runtime.getURL('img/icon.png'),
           title: "Mind Map Ready",
           message: "Mind map successfully created and displayed in the sidebar"
         });
@@ -319,7 +319,7 @@ async function processAndShowMindMap(payload, tabId, taskId) {
         });
         chrome.notifications.create({
           type: "basic",
-          iconUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+          iconUrl: chrome.runtime.getURL('img/icon.png'),
           title: "Error",
           message: "Failed to display mind map: " + e.message
         });
@@ -333,7 +333,7 @@ async function processAndShowMindMap(payload, tabId, taskId) {
       });
       chrome.notifications.create({
         type: "basic",
-        iconUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+        iconUrl: chrome.runtime.getURL('img/icon.png'),
         title: "Error",
         message: errorMsg
       });
@@ -346,7 +346,7 @@ async function processAndShowMindMap(payload, tabId, taskId) {
     });
     chrome.notifications.create({
       type: "basic",
-      iconUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+      iconUrl: chrome.runtime.getURL('img/icon.png'),
       title: "Error",
       message: "Error sending request: " + e.message
     });

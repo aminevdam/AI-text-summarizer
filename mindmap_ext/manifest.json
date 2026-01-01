@@ -25,7 +25,7 @@
   "host_permissions": ["https://api.mindmapai.tech/*"],
   "web_accessible_resources": [
     {
-      "resources": ["vendor/pdfjs/pdf.worker.min.js"],
+      "resources": ["vendor/pdfjs/pdf.worker.min.js", "welcome.html", "img/1.jpg", "img/2.jpg"],
       "matches": ["<all_urls>"]
     }
   ],

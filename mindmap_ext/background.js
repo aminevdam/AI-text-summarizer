@@ -53,6 +53,18 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 });
 
-chrome.runtime.onInstalled.addListener(() => {
-  // Extension installed
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    // Code to be executed on first install
+    // Open welcome page
+    chrome.tabs.create({
+      url: 'http://mindmapai.tech:8080/'
+    });
+  } else if (details.reason === 'update') {
+    // When extension is updated
+  } else if (details.reason === 'chrome_update') {
+    // When browser is updated
+  } else if (details.reason === 'shared_module_update') {
+    // When a shared module is updated
+  }
 });
