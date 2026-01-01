@@ -536,7 +536,10 @@ function ensureMindmapSidebar() {
   panel.innerHTML = `
     <div class="mm-resize-handle" id="mm-resize-handle" title="Drag to resize"></div>
     <div class="mm-header">
-      <strong>Mind Map</strong>
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <img src="${chrome.runtime.getURL('img/icon.png')}" alt="Logo" style="width: 24px; height: 24px; display: block;">
+        <strong>Mind Map Generator</strong>
+      </div>
       <div class="mm-header-buttons">
         <div class="mm-download-dropdown" id="mm-download-dropdown">
           <button class="mm-download-btn" id="mm-download-btn">

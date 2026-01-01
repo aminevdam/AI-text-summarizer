@@ -1,6 +1,6 @@
 {
   "name": "Mindmap Prep",
-  "description": "Prepare inputs (text/current page/file) for mindmap backend analysis",
+  "description": "Automatically generates a mind map from the current web page or PDF",
   "version": "0.3.3",
   "manifest_version": 3,
   "icons": {
@@ -25,7 +25,7 @@
   "host_permissions": ["https://api.mindmapai.tech/*"],
   "web_accessible_resources": [
     {
-      "resources": ["vendor/pdfjs/pdf.worker.min.js", "welcome.html", "img/1.jpg", "img/2.jpg"],
+      "resources": ["vendor/pdfjs/pdf.worker.min.js", "welcome.html", "img/1.jpg", "img/2.jpg", "img/icon.png"],
       "matches": ["<all_urls>"]
     }
   ],
